@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Info, Phone, Newspaper, Menu, X, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Info, Phone, Newspaper, Menu, X, type LucideIcon, Landmark, Building2 } from 'lucide-react';
 
 interface MenuItem {
   name: string;
@@ -17,13 +17,17 @@ const Sidebar: React.FC = () => {
     { name: 'About', path: '/about', icon: Info },
     { name: 'Contact', path: '/contact', icon: Phone },
     { name: 'News', path: '/news', icon: Newspaper },
+    { name: 'Land', path: '/land', icon: Landmark },
+    { name: 'Projects', path: '/projects', icon: Building2 },
+    { name: 'Projects Inquiries', path: '/projects-inquiries', icon: Building2 },
+    { name: 'Gallery', path: '/gallery', icon: Building2 },
   ];
 
   return (
     <div className={`flex flex-col h-auto p-3 bg-slate-950 text-white transition-all duration-300 shadow-xl ${isOpen ? 'w-64' : 'w-20'}`}>
       {/* Header Section */}
       <div className="flex items-center justify-between mb-10 px-2 pt-2">
-        {isOpen && <h1 className="text-xl font-extrabold tracking-wider text-blue-400">ODILIYA DASHBOARD</h1>}
+        {isOpen && <h1 className="text-xl font-extrabold tracking-wider text-blue-400">ODILIYA</h1>}
         <button 
           onClick={() => setIsOpen(!isOpen)} 
           className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-slate-400 hover:text-white"
