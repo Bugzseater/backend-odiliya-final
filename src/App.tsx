@@ -8,6 +8,7 @@ import Lands from './pages/Lands';
 import ProjectsDetails from './pages/ProjectsDetails';
 import ProjectsInquiries from './pages/ProjectsInquiries';
 import GallaryManage from './pages/GallaryManage';
+import MetaDetails from './pages/MetaDetails';
 
 // Simple types for Page components
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
           <Route path="/projects" element={<ProjectsDetails />} />
           <Route path="/projects-inquiries" element={<ProjectsInquiries />} />
           <Route path="/gallery" element={<GallaryManage />} />
+          <Route path="/meta" element={<MetaDetails />} />
         </Routes>
       </Layout>
     </Router>

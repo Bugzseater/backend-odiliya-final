@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Info, Phone, Newspaper, Menu, X, type LucideIcon, Landmark, Building2 } from 'lucide-react';
+import { LayoutDashboard, Info, Phone, Newspaper, Menu, X, type LucideIcon, Landmark, Building2, TagIcon } from 'lucide-react';
 
 interface MenuItem {
   name: string;
@@ -21,6 +21,7 @@ const Sidebar: React.FC = () => {
     { name: 'Projects', path: '/projects', icon: Building2 },
     { name: 'Projects Inquiries', path: '/projects-inquiries', icon: Building2 },
     { name: 'Gallery', path: '/gallery', icon: Building2 },
+    { name: 'Meta', path: '/meta', icon: TagIcon },
   ];
 
   return (
