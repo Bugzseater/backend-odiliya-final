@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Info, Phone, Newspaper, Menu, X, type LucideIcon, Landmark, Building2, TagIcon } from 'lucide-react';
+import { LayoutDashboard, Info, Phone, Newspaper, Menu, X, type LucideIcon, Landmark, Building2, TagIcon, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface MenuItem {
   name: string;
@@ -11,6 +12,7 @@ interface MenuItem {
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -25,7 +27,7 @@ const Sidebar: React.FC = () => {
   ];
 
   return (
-    <div className={`flex flex-col h-auto p-3 bg-slate-950 text-white transition-all duration-300 shadow-xl ${isOpen ? 'w-64' : 'w-20'}`}>
+    <div className={`flex flex-col h-auto p-3 bg-white text-[#2f2f2f] transition-all duration-300 shadow-xl ${isOpen ? 'w-64' : 'w-20'}`}>
       {/* Header Section */}
       <div className="flex items-center justify-between mb-10 px-2 pt-2">
         {isOpen && <h1 className="text-xl font-extrabold tracking-wider text-blue-400">ODILIYA</h1>}
@@ -70,16 +72,22 @@ const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Footer Profile Section */}
-      <div className="mt-auto border-t border-slate-800 pt-4 flex items-center px-2">
-        <div className="w-8 h-8 rounded-full bg-linear-to-tr from-blue-500 to-purple-500 shrink-0" />
-        {isOpen && (
-          <div className="ml-3 overflow-hidden">
-            <p className="text-xs font-semibold truncate">User Admin</p>
-            <p className="text-[10px] text-slate-500 truncate">admin@example.com</p>
-          </div>
-        )}
-      </div>
+<button
+  onClick={logout}
+  className="w-full flex items-center p-3 rounded-xl transition-all duration-200 hover:bg-red-600/10 text-slate-400 hover:text-red-500 mb-2"
+>
+  <div className={`${!isOpen && 'mx-auto'}`}>
+    <LogOut size={22} />
+  </div>
+  {isOpen && (
+    <span className="ml-3 font-medium text-sm">Logout</span>
+  )}
+  {!isOpen && (
+    <div className="fixed left-20 ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+      Logout
+    </div>
+  )}
+</button>
     </div>
   );
 };

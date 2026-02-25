@@ -1,6 +1,11 @@
+// src/App.tsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
+import Login from './pages/Login';
+import Unauthorized from './pages/Unauthorized';
 import About from './pages/About';
 import AdminNews from './pages/AdminNews';
 import ContactDetails from './pages/ContactDetails';
@@ -10,12 +15,11 @@ import ProjectsInquiries from './pages/ProjectsInquiries';
 import GallaryManage from './pages/GallaryManage';
 import MetaDetails from './pages/MetaDetails';
 
-// Simple types for Page components
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex bg-slate-50 min-h-screen">
     <Sidebar />
-    <main className="flex-1 p-8">
-      <div className="max-w-6xl mx-auto">
+    <main className="flex-1 p-8 overflow-auto">
+      <div className="max-w-7xl mx-auto">
         {children}
       </div>
     </main>
@@ -25,19 +29,116 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const App: React.FC = () => {
   return (
     <Router>
-      <Layout>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<h1 className="text-2xl font-bold">Dashboard Home</h1>} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<ContactDetails />} />
-          <Route path="/news" element={<AdminNews />} />
-          <Route path="/land" element={<Lands />} />
-          <Route path="/projects" element={<ProjectsDetails />} />
-          <Route path="/projects-inquiries" element={<ProjectsInquiries />} />
-          <Route path="/gallery" element={<GallaryManage />} />
-          <Route path="/meta" element={<MetaDetails />} />
+          {/* Public Routes - මුලින්ම define කරන්න */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          
+          {/* Protected Routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <h1 className="text-2xl font-bold">Dashboard Home</h1>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/about"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <About />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/contact"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ContactDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/news"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AdminNews />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/land"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Lands />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProjectsDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/projects-inquiries"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProjectsInquiries />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/gallery"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <GallaryManage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/meta"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <MetaDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* 404 - Not Found */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </Layout>
+      </AuthProvider>
     </Router>
   );
 };
