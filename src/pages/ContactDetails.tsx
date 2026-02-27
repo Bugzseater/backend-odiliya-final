@@ -119,7 +119,7 @@ const ContactDetails = () => {
             onClick={() => setActiveTab("contact_inquiries")}
             className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-all ${activeTab === 'contact_inquiries' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
           >
-            <MessageSquare size={18} /> Inquiries
+            <MessageSquare size={18} />Contact Inquiries
           </button>
         </div>
       </div>
