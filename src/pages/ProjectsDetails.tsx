@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db, storage } from '../firebaseConfig';
+import { db } from '../firebaseConfig'; // storage එක import කරන්න ඕනෙ නැහැ
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// storage imports ඉවත් කරන්න
 import { 
   Trash2, Edit3, PlusCircle, Loader2, Image as ImageIcon, 
   X, Bold, Italic, Palette, 
@@ -14,6 +14,10 @@ const TEXT_COLORS = [
 
 const CATEGORIES = ["Apartments", "Residencies", "ROI Projects", "Lands"];
 const AVAILABILITY_OPTIONS = ["Available", "Sold Out", "Coming Soon"];
+
+// ✅ Cloudflare Configurations (AdminNews එකෙන් ගන්න)
+const WORKER_URL = "https://odiliya-uploader.devmiez.workers.dev";
+const PROJECTS_R2_URL = "https://pub-33ead4483c43462cbb3f1cc1746f0970.r2.dev"; // Projects සඳහා URL
 
 const AdminProjects: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -38,7 +42,6 @@ const AdminProjects: React.FC = () => {
     description: '',
     image: '',
     images: [] as { src: string; alt: string; caption: string }[],
-    // Floor Plans state එක එක් කරන ලදි
     floorPlans: [] as { image: string; name: string }[],
     amenities: [{ name: '' }],
     faqs: [{ question: '', answer: '' }],
@@ -73,18 +76,28 @@ const AdminProjects: React.FC = () => {
     };
   };
 
-  const uploadImage = async (file: File, path: string) => {
-    const storageRef = ref(storage, `projects/${path}/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
+  // ✅ Cloudflare R2 Upload Function (AdminNews එකෙන් ගත්තා)
+  const uploadToR2 = async (file: File, folder: string) => {
+    const fileName = `projects/${folder}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+    const response = await fetch(`${WORKER_URL}/${fileName}`, {
+      method: 'PUT',
+      body: file,
+      headers: { 
+        'Content-Type': file.type,
+        'Cache-Control': 'public, max-age=31536000'
+      }
+    });
+    if (!response.ok) throw new Error("R2 upload failed");
+    return `${PROJECTS_R2_URL}/${fileName}`;
   };
 
+  // ✅ Main Image Upload (Cloudflare R2)
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file, "main");
+      const url = await uploadToR2(file, "main");
       setFormData(prev => ({ ...prev, image: url }));
     } catch (error) {
       alert("Main image upload failed!");
@@ -93,12 +106,13 @@ const AdminProjects: React.FC = () => {
     }
   };
 
+  // ✅ Gallery Images Upload (Cloudflare R2)
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     setUploading(true);
     try {
-      const uploadPromises = files.map(file => uploadImage(file, "gallery"));
+      const uploadPromises = files.map(file => uploadToR2(file, "gallery"));
       const urls = await Promise.all(uploadPromises);
       const newImages = urls.map(url => ({ 
         src: url, 
@@ -124,13 +138,13 @@ const AdminProjects: React.FC = () => {
     }));
   };
 
-  // Floor Plan Upload කිරීම සහ ඉවත් කිරීම
+  // ✅ Floor Plan Upload (Cloudflare R2)
   const handleFloorPlanUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file, "floorplans");
+      const url = await uploadToR2(file, "floorplans");
       setFormData(prev => ({
         ...prev,
         floorPlans: [...prev.floorPlans, { image: url, name: "" }]
@@ -149,12 +163,13 @@ const AdminProjects: React.FC = () => {
     }));
   };
 
+  // ✅ Avatar Upload (Cloudflare R2)
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file, "advisors");
+      const url = await uploadToR2(file, "advisors");
       setFormData(prev => ({ 
         ...prev, 
         propertyAdvisor: { ...prev.propertyAdvisor, avatar: url } 
@@ -166,12 +181,13 @@ const AdminProjects: React.FC = () => {
     }
   };
 
+  // ✅ Inline Image Upload (Content එකට) - Cloudflare R2
   const handleInlineImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setInlineUploading(true);
     try {
-      const url = await uploadImage(file, "content");
+      const url = await uploadToR2(file, "content");
       const start = cursorPosRef.current.start;
       const end = cursorPosRef.current.end;
       const imgTag = `\n<img src="${url}" alt="content" style="max-width:100%; height:auto; border-radius:12px; margin:15px 0; display:block;" />\n`;
