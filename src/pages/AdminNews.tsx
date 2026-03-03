@@ -164,8 +164,8 @@ const AdminNews: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-            <input type="text" placeholder="Article Title" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
-            <textarea placeholder="Short Excerpt (Brief description)" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]" value={formData.excerpt} onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })} required />
+            <input type="text" placeholder="Article Title" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}  />
+            <textarea placeholder="Short Excerpt (Brief description)" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]" value={formData.excerpt} onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}  />
           </div>
 
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
@@ -194,7 +194,7 @@ const AdminNews: React.FC = () => {
               value={formData.content} 
               onSelect={(e: any) => cursorPosRef.current = { start: e.target.selectionStart, end: e.target.selectionEnd }}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })} 
-              required 
+            
             />
           </div>
 
