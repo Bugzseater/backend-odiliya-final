@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig"; 
 import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query } from "firebase/firestore";
 import { 
-  Loader2, Plus, Image as ImageIcon, MapPin, 
-  UserCheck, Edit3, Trash2, X, Home, Map as MapIcon, DollarSign, 
-  PlusCircle, Trash, MessageCircleQuestion, FileText, Globe
+  Loader2, Plus, Image as ImageIcon,
+  UserCheck, Edit3, Trash2, X, Home,  
+  PlusCircle, MessageCircleQuestion, FileText, Globe
 } from "lucide-react";
 
 const AddLand = () => {

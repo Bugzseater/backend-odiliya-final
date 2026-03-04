@@ -12,7 +12,7 @@ interface MenuItem {
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(true);
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
 
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },

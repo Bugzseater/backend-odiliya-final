@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { 
@@ -8,25 +8,53 @@ import {
   LayoutDashboard, Database
 } from "lucide-react";
 
+// Define the type for inquiries
+interface Inquiry {
+  id: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  message?: string;
+  projectName?: string;
+  status: string;
+  submittedAt?: {
+    toDate?: () => Date;
+    seconds?: number;
+    nanoseconds?: number;
+  } | Date | null;
+}
+
 const ContactDetails = () => {
-  const [inquiries, setInquiries] = useState([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); 
-  const [activeTab, setActiveTab] = useState("contact_us"); // 'contact_us' or 'contact_inquiries'
-  const [selectedInquiry, setSelectedInquiry] = useState(null);
+  const [activeTab, setActiveTab] = useState("contact_us");
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Real-time data fetch based on activeTab
   useEffect(() => {
     setLoading(true);
     const q = query(collection(db, activeTab), orderBy("submittedAt", "desc"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const inquiriesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        submittedAt: doc.data().submittedAt?.toDate()
-      }));
+      const inquiriesData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Handle the date properly
+        let submittedAt = null;
+        if (data.submittedAt) {
+          if (typeof data.submittedAt.toDate === 'function') {
+            submittedAt = data.submittedAt.toDate();
+          } else {
+            submittedAt = data.submittedAt;
+          }
+        }
+        
+        return {
+          id: doc.id,
+          ...data,
+          submittedAt: submittedAt
+        };
+      }) as Inquiry[];
       
       setInquiries(inquiriesData);
       setLoading(false);
@@ -38,7 +66,7 @@ const ContactDetails = () => {
     return () => unsubscribe();
   }, [activeTab]);
 
-  const updateStatus = async (id, newStatus) => {
+  const updateStatus = async (id: string, newStatus: string) => {
     try {
       const inquiryRef = doc(db, activeTab, id);
       await updateDoc(inquiryRef, {
@@ -50,7 +78,7 @@ const ContactDetails = () => {
     }
   };
 
-  const deleteInquiry = async (id) => {
+  const deleteInquiry = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this record?")) {
       try {
         await deleteDoc(doc(db, activeTab, id));
@@ -60,23 +88,37 @@ const ContactDetails = () => {
     }
   };
 
-  const formatDate = (date) => {
+  const formatDate = (date: any) => {
     if (!date) return "No date";
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    }).format(date);
+    
+    // If it's a Firestore timestamp with toDate method
+    if (date && typeof date.toDate === 'function') {
+      date = date.toDate();
+    }
+    
+    // If it's now a Date object
+    if (date instanceof Date) {
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit'
+      }).format(date);
+    }
+    
+    return "No date";
   };
 
   const filteredInquiries = inquiries.filter(inquiry => {
     const matchesFilter = filter === "all" || inquiry.status === filter;
     const searchStr = searchTerm.toLowerCase();
     const matchesSearch = 
-      inquiry.name?.toLowerCase().includes(searchStr) ||
-      inquiry.email?.toLowerCase().includes(searchStr) ||
-      inquiry.phone?.includes(searchTerm) ||
-      inquiry.message?.toLowerCase().includes(searchStr) ||
-      inquiry.projectName?.toLowerCase().includes(searchStr);
+      (inquiry.name && inquiry.name.toLowerCase().includes(searchStr)) ||
+      (inquiry.email && inquiry.email.toLowerCase().includes(searchStr)) ||
+      (inquiry.phone && inquiry.phone.includes(searchTerm)) ||
+      (inquiry.message && inquiry.message.toLowerCase().includes(searchStr)) ||
+      (inquiry.projectName && inquiry.projectName.toLowerCase().includes(searchStr));
     
     return matchesFilter && matchesSearch;
   });
@@ -84,9 +126,12 @@ const ContactDetails = () => {
   const exportToCSV = () => {
     const headers = ['Name', 'Email', 'Phone', 'Content', 'Status', 'Date'];
     const csvData = filteredInquiries.map(i => [
-      i.name, i.email, i.phone, 
+      i.name || '',
+      i.email || '',
+      i.phone || '', 
       (i.message || i.projectName || "N/A"), 
-      i.status, formatDate(i.submittedAt)
+      i.status || 'unknown', 
+      formatDate(i.submittedAt)
     ]);
     const csvContent = [headers, ...csvData].map(row => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -119,7 +164,7 @@ const ContactDetails = () => {
             onClick={() => setActiveTab("contact_inquiries")}
             className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-all ${activeTab === 'contact_inquiries' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
           >
-            <MessageSquare size={18} />Contact Inquiries
+            <MessageSquare size={18} /> Contact Inquiries
           </button>
         </div>
       </div>
@@ -173,12 +218,12 @@ const ContactDetails = () => {
                 </button>
               </div>
 
-              <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">{item.name}</h3>
-              <p className="text-sm text-gray-500 mb-4 truncate">{item.email}</p>
+              <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">{item.name || 'No Name'}</h3>
+              <p className="text-sm text-gray-500 mb-4 truncate">{item.email || 'No Email'}</p>
 
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <Phone size={12} /> {item.phone}
+                  <Phone size={12} /> {item.phone || 'No Phone'}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-600">
                   <Calendar size={12} /> {formatDate(item.submittedAt)}
@@ -211,7 +256,7 @@ const ContactDetails = () => {
             <div className="bg-blue-600 p-6 text-white flex justify-between items-center">
               <div>
                 <p className="text-blue-100 text-xs uppercase tracking-widest mb-1">Inquiry Details</p>
-                <h2 className="text-xl font-bold">{selectedInquiry.name}</h2>
+                <h2 className="text-xl font-bold">{selectedInquiry.name || 'No Name'}</h2>
               </div>
               <button onClick={() => setSelectedInquiry(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><XCircle size={24} /></button>
             </div>
@@ -221,13 +266,13 @@ const ContactDetails = () => {
                 <div>
                   <p className="text-gray-400 text-xs mb-1">Email Address</p>
                   <a href={`mailto:${selectedInquiry.email}`} className="text-blue-600 font-medium flex items-center gap-2">
-                    <Mail size={14} /> {selectedInquiry.email}
+                    <Mail size={14} /> {selectedInquiry.email || 'No Email'}
                   </a>
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs mb-1">Phone Number</p>
                   <a href={`tel:${selectedInquiry.phone}`} className="text-gray-900 font-medium flex items-center gap-2">
-                    <Phone size={14} /> {selectedInquiry.phone}
+                    <Phone size={14} /> {selectedInquiry.phone || 'No Phone'}
                   </a>
                 </div>
               </div>
@@ -242,7 +287,7 @@ const ContactDetails = () => {
               <div className="flex justify-between items-center text-sm text-gray-500 pt-4 border-t border-gray-100">
                 <span className="flex items-center gap-2"><Calendar size={14}/> {formatDate(selectedInquiry.submittedAt)}</span>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${selectedInquiry.status === 'unread' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                  {selectedInquiry.status}
+                  {selectedInquiry.status || 'unknown'}
                 </span>
               </div>
             </div>

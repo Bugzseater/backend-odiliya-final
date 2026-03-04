@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../firebaseConfig"; 
 import { 
   collection, addDoc, serverTimestamp, 
@@ -6,32 +6,51 @@ import {
 } from "firebase/firestore";
 import { Upload, Trash2, Image as ImageIcon, X, Link } from "lucide-react";
 
+// Gallery image type එක define කරනවා
+interface GalleryImage {
+  id: string;
+  url: string;
+  storagePath: string;
+  name: string;
+  createdAt?: any;
+}
+
 function GallaryManage() {
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState<GalleryImage[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [urlPreview, setUrlPreview] = useState("");
 
-  // --- Cloudflare Configurations ---
-  const WORKER_URL = "https://odiliya-uploader.devmiez.workers.dev"; //
-  const R2_PUBLIC_URL = "https://pub-60bcd14d5096464aacffd76b19186295.r2.dev"; //
-  // ---------------------------------
+  // Cloudflare Configurations
+  const WORKER_URL = "https://odiliya-uploader.devmiez.workers.dev";
+  const R2_PUBLIC_URL = "https://pub-60bcd14d5096464aacffd76b19186295.r2.dev";
 
-  // 1. Fetch Images (Real-time from Firestore)
+  // Real-time images fetch කරනවා
   useEffect(() => {
     const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setImages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const imagesData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          url: data.url || '',
+          storagePath: data.storagePath || '',
+          name: data.name || '',
+          createdAt: data.createdAt
+        };
+      }) as GalleryImage[];
+      
+      setImages(imagesData);
     });
     return () => unsubscribe();
   }, []);
 
-  // 2. Handle File Selection
-  const onFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+  // File එක select කරන විට
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
@@ -39,7 +58,7 @@ function GallaryManage() {
     }
   };
 
-  // 3. Upload Image to R2 via Worker
+  // R2 වෙත upload කරනවා
   const handleUpload = async () => {
     if (!file) return;
 
@@ -47,7 +66,6 @@ function GallaryManage() {
     const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
     
     try {
-      // Worker එක හරහා R2 එකට Upload කිරීම
       const response = await fetch(`${WORKER_URL}/${fileName}`, {
         method: 'PUT',
         body: file,
@@ -60,7 +78,6 @@ function GallaryManage() {
 
       const downloadURL = `${R2_PUBLIC_URL}/${fileName}`;
       
-      // Firestore එකේ URL එක විතරක් Save කිරීම
       await addDoc(collection(db, "gallery"), {
         url: downloadURL,
         storagePath: "cloudflare-r2",
@@ -79,7 +96,7 @@ function GallaryManage() {
     }
   };
 
-  // 4. Add Image from External URL
+  // URL එකකින් image එක add කරනවා
   const handleAddFromUrl = async () => {
     if (!imageUrl.trim()) return;
     setUploading(true);
@@ -97,18 +114,20 @@ function GallaryManage() {
       setShowUrlInput(false);
     } catch (error) {
       console.error(error);
+      alert("URL එකෙන් එකතු කිරීම අසාර්ථකයි!");
     } finally {
       setUploading(false);
     }
   };
 
-  // 5. Delete Image from Firestore
-  const handleDelete = async (id) => {
+  // Image එක delete කරනවා
+  const handleDelete = async (id: string) => {
     if (window.confirm("ඔබට මෙම පින්තූරය මැකීමට අවශ්‍ය බව සහතිකද?")) {
       try {
         await deleteDoc(doc(db, "gallery", id));
       } catch (error) {
         console.error(error);
+        alert("මකා දැමීම අසාර්ථකයි!");
       }
     }
   };
@@ -150,7 +169,16 @@ function GallaryManage() {
                   placeholder="https://example.com/image.jpg" 
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
                 />
-                {urlPreview && <img src={urlPreview} className="rounded-lg max-h-48 mx-auto shadow-sm" alt="Preview" />}
+                {urlPreview && (
+                  <img 
+                    src={urlPreview} 
+                    className="rounded-lg max-h-48 mx-auto shadow-sm" 
+                    alt="Preview" 
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Invalid+URL';
+                    }}
+                  />
+                )}
                 <button 
                   onClick={handleAddFromUrl} 
                   disabled={!imageUrl || uploading} 
@@ -205,10 +233,12 @@ function GallaryManage() {
             <div key={img.id} className="group relative bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 aspect-square">
               <img 
                 src={img.url} 
-                alt={img.name} 
+                alt={img.name || 'Gallery image'} 
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
                 loading="lazy"
-                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Image+Load+Error'; }} 
+                onError={(e) => { 
+                  e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Image+Load+Error'; 
+                }} 
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button 

@@ -1,14 +1,30 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { 
   Mail, Phone, Calendar, Trash2, 
   Eye, EyeOff, RefreshCw, Briefcase, 
-  User, MessageSquare 
+  User
 } from "lucide-react";
 
+// Inquiry type එක define කරනවා
+interface Inquiry {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  projectName: string;
+  message?: string;
+  status: string;
+  submittedAt?: {
+    toDate?: () => Date;
+    seconds?: number;
+    nanoseconds?: number;
+  } | Date | null;
+}
+
 function ProjectsInquiries() {
-  const [inquiries, setInquiries] = useState([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Firestore එකෙන් data real-time ලබා ගැනීම
@@ -16,11 +32,31 @@ function ProjectsInquiries() {
     const q = query(collection(db, "inquiries"), orderBy("submittedAt", "desc"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        submittedAt: doc.data().submittedAt?.toDate()
-      }));
+      const data = snapshot.docs.map(doc => {
+        const docData = doc.data();
+        let submittedAt = null;
+        
+        // Handle date properly
+        if (docData.submittedAt) {
+          if (typeof docData.submittedAt.toDate === 'function') {
+            submittedAt = docData.submittedAt.toDate();
+          } else {
+            submittedAt = docData.submittedAt;
+          }
+        }
+        
+        return {
+          id: doc.id,
+          name: docData.name || '',
+          email: docData.email || '',
+          phone: docData.phone || '',
+          projectName: docData.projectName || '',
+          message: docData.message || '',
+          status: docData.status || 'unread',
+          submittedAt: submittedAt
+        };
+      }) as Inquiry[];
+      
       setInquiries(data);
       setLoading(false);
     }, (error) => {
@@ -32,7 +68,7 @@ function ProjectsInquiries() {
   }, []);
 
   // Status එක (Read/Unread) update කිරීම
-  const toggleStatus = async (id, currentStatus) => {
+  const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "unread" ? "read" : "unread";
     try {
       await updateDoc(doc(db, "inquiries", id), { status: newStatus });
@@ -42,7 +78,7 @@ function ProjectsInquiries() {
   };
 
   // Record එක delete කිරීම
-  const deleteRecord = async (id) => {
+  const deleteRecord = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this inquiry?")) {
       try {
         await deleteDoc(doc(db, "inquiries", id));
@@ -52,11 +88,24 @@ function ProjectsInquiries() {
     }
   };
 
-  const formatDate = (date) => {
+  // Date format කරනවා
+  const formatDate = (date: any) => {
     if (!date) return "N/A";
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    }).format(date);
+    
+    if (date && typeof date.toDate === 'function') {
+      date = date.toDate();
+    }
+    
+    if (date instanceof Date) {
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit'
+      }).format(date);
+    }
+    
+    return "N/A";
   };
 
   if (loading) {
@@ -106,17 +155,17 @@ function ProjectsInquiries() {
 
                 <div className="space-y-3">
                   <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                    <User size={16} className="text-gray-400" /> {item.name}
+                    <User size={16} className="text-gray-400" /> {item.name || 'No Name'}
                   </h3>
                   
                   <div className="text-sm text-gray-600 space-y-1">
-                    <p className="flex items-center gap-2"><Mail size={14} /> {item.email}</p>
-                    <p className="flex items-center gap-2"><Phone size={14} /> {item.phone}</p>
+                    <p className="flex items-center gap-2"><Mail size={14} /> {item.email || 'No Email'}</p>
+                    <p className="flex items-center gap-2"><Phone size={14} /> {item.phone || 'No Phone'}</p>
                   </div>
 
                   <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                     <p className="text-[11px] text-blue-500 font-bold uppercase mb-1">Project Interested</p>
-                    <p className="text-sm font-semibold text-blue-900">{item.projectName}</p>
+                    <p className="text-sm font-semibold text-blue-900">{item.projectName || 'Not specified'}</p>
                   </div>
 
                   {item.message && (

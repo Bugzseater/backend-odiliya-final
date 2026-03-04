@@ -21,8 +21,8 @@ const PROJECTS_R2_URL = "https://pub-33ead4483c43462cbb3f1cc1746f0970.r2.dev"; /
 
 const AdminProjects: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [inlineUploading, setInlineUploading] = useState(false);
+  const [, setUploading] = useState(false);
+  const [, setInlineUploading] = useState(false);
   const [projectsList, setProjectsList] = useState<any[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -243,17 +243,17 @@ const AdminProjects: React.FC = () => {
     setFormData({ ...formData, [field]: updatedArray });
   };
 
-  const addTourDetail = (tourIndex: number) => {
-    const updatedTours = [...formData.virtualTours];
-    updatedTours[tourIndex].details.push({ text: "" });
-    setFormData({ ...formData, virtualTours: updatedTours });
-  };
+  // const addTourDetail = (tourIndex: number) => {
+  //   const updatedTours = [...formData.virtualTours];
+  //   updatedTours[tourIndex].details.push({ text: "" });
+  //   setFormData({ ...formData, virtualTours: updatedTours });
+  // };
 
-  const removeTourDetail = (tourIndex: number, detailIndex: number) => {
-    const updatedTours = [...formData.virtualTours];
-    updatedTours[tourIndex].details = updatedTours[tourIndex].details.filter((_: any, i: number) => i !== detailIndex);
-    setFormData({ ...formData, virtualTours: updatedTours });
-  };
+  // const removeTourDetail = (tourIndex: number, detailIndex: number) => {
+  //   const updatedTours = [...formData.virtualTours];
+  //   updatedTours[tourIndex].details = updatedTours[tourIndex].details.filter((_: any, i: number) => i !== detailIndex);
+  //   setFormData({ ...formData, virtualTours: updatedTours });
+  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

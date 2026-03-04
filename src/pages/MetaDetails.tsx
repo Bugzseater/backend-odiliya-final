@@ -1,23 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { Loader2, Save } from 'lucide-react';
 
+// Base item type එක define කරනවා
+interface BaseItem {
+  id: string;
+  name: string;
+  location?: string;
+  slug?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  [key: string]: any; // additional fields සඳහා
+}
+
 const MetaDetails = () => {
   const [activeTab, setActiveTab] = useState('projects');
-  const [projects, setProjects] = useState([]);
-  const [lands, setLands] = useState([]);
+  const [projects, setProjects] = useState<BaseItem[]>([]);
+  const [lands, setLands] = useState<BaseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<BaseItem | null>(null);
   const [formData, setFormData] = useState({
     slug: '',
     metaTitle: '',
     metaDescription: ''
   });
 
-  // Create slug from name
-  const createSlug = (name) => {
+  // Slug එක create කරනවා
+  const createSlug = (name: string) => {
     return name
       .toLowerCase()
       .trim()
@@ -26,20 +37,28 @@ const MetaDetails = () => {
       .replace(/-+/g, '-');
   };
 
-  // Fetch data
+  // Data fetch කරනවා
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         if (activeTab === 'projects') {
           const snapshot = await getDocs(collection(db, 'projectDetails'));
-          setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+          const projectsData = snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+          })) as BaseItem[];
+          setProjects(projectsData);
         } else {
           const snapshot = await getDocs(collection(db, 'landProjects'));
-          setLands(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+          const landsData = snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+          })) as BaseItem[];
+          setLands(landsData);
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -47,15 +66,17 @@ const MetaDetails = () => {
     fetchData();
   }, [activeTab]);
 
-  const handleSelectItem = (item) => {
+  // Item එකක් select කරන විට
+  const handleSelectItem = (item: BaseItem) => {
     setSelectedItem(item);
     setFormData({
       slug: item.slug || createSlug(item.name),
       metaTitle: item.metaTitle || item.name,
-      metaDescription: item.metaDescription || '' // Auto fill එක ඉවත් කළා
+      metaDescription: item.metaDescription || ''
     });
   };
 
+  // Slug generate කරනවා
   const generateSlug = () => {
     if (selectedItem) {
       setFormData(prev => ({
@@ -65,6 +86,7 @@ const MetaDetails = () => {
     }
   };
 
+  // Save කරනවා
   const handleSave = async () => {
     if (!selectedItem) return;
     setSaving(true);
@@ -73,7 +95,8 @@ const MetaDetails = () => {
       await updateDoc(doc(db, collectionName, selectedItem.id), formData);
       alert('✅ Saved successfully!');
     } catch (error) {
-      alert('Error: ' + error.message);
+      console.error('Error saving:', error);
+      alert('Error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSaving(false);
     }
@@ -125,7 +148,7 @@ const MetaDetails = () => {
                   {activeTab === 'projects' ? 'Projects' : 'Lands'} ({currentItems.length})
                 </h2>
               </div>
-              <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+              <div className="divide-y divide-gray-100 max-h-125 overflow-y-auto">
                 {currentItems.map((item) => (
                   <button
                     key={item.id}
@@ -167,6 +190,7 @@ const MetaDetails = () => {
                           placeholder="enter-url-slug"
                         />
                         <button
+                          type="button"
                           onClick={generateSlug}
                           className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 transition-colors"
                         >
@@ -190,7 +214,7 @@ const MetaDetails = () => {
                       />
                     </div>
 
-                    {/* Meta Description - EMPTY by default */}
+                    {/* Meta Description */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Meta Description
