@@ -4,10 +4,10 @@ import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } fro
 import { 
   Mail, Phone, Calendar, Trash2, 
   Eye, EyeOff, RefreshCw, Briefcase, 
-  User
+  User, Clock, 
+  MessageCircle, XCircle, Filter
 } from "lucide-react";
 
-// Inquiry type එක define කරනවා
 interface Inquiry {
   id: string;
   name: string;
@@ -26,8 +26,9 @@ interface Inquiry {
 function ProjectsInquiries() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
 
-  // Firestore එකෙන් data real-time ලබා ගැනීම
   useEffect(() => {
     const q = query(collection(db, "inquiries"), orderBy("submittedAt", "desc"));
     
@@ -36,7 +37,6 @@ function ProjectsInquiries() {
         const docData = doc.data();
         let submittedAt = null;
         
-        // Handle date properly
         if (docData.submittedAt) {
           if (typeof docData.submittedAt.toDate === 'function') {
             submittedAt = docData.submittedAt.toDate();
@@ -67,7 +67,6 @@ function ProjectsInquiries() {
     return () => unsubscribe();
   }, []);
 
-  // Status එක (Read/Unread) update කිරීම
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "unread" ? "read" : "unread";
     try {
@@ -77,7 +76,6 @@ function ProjectsInquiries() {
     }
   };
 
-  // Record එක delete කිරීම
   const deleteRecord = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this inquiry?")) {
       try {
@@ -88,7 +86,6 @@ function ProjectsInquiries() {
     }
   };
 
-  // Date format කරනවා
   const formatDate = (date: any) => {
     if (!date) return "N/A";
     
@@ -108,92 +105,267 @@ function ProjectsInquiries() {
     return "N/A";
   };
 
+  const filteredInquiries = inquiries.filter(inquiry => 
+    filter === "all" || inquiry.status === filter
+  );
+
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'unread': return 'bg-red-600/20 text-red-400 border-red-600/30';
+      case 'read': return 'bg-green-600/20 text-green-400 border-green-600/30';
+      default: return 'bg-[#252530] text-[#8B8B98] border-[#353540]';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'unread': return <EyeOff size={14} />;
+      case 'read': return <Eye size={14} />;
+      default: return <Clock size={14} />;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <RefreshCw className="animate-spin text-blue-600" size={32} />
+        <div className="relative">
+          <div className="absolute inset-0 bg-blue-600/20 blur-xl rounded-full"></div>
+          <RefreshCw className="animate-spin text-blue-500 relative z-10" size={40} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <Briefcase className="text-blue-600" /> Project Inquiries
-        </h2>
-        <p className="text-gray-500 text-sm">Manage inquiries received from project pages</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-[#13131A] rounded-3xl p-8 border border-[#252530]">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-600/30">
+                <Briefcase className="text-blue-500" size={28} />
+              </div>
+              <h1 className="text-3xl font-bold text-white">Project Inquiries</h1>
+            </div>
+            <p className="text-[#8B8B98] ml-2">Manage inquiries received from project pages</p>
+          </div>
+          
+          {/* Filter */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-[#1A1A24] p-2 rounded-2xl border border-[#252530]">
+              <Filter size={16} className="text-[#8B8B98]" />
+              <select 
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="bg-transparent text-white text-sm outline-none cursor-pointer"
+              >
+                <option value="all">All Inquiries</option>
+                <option value="unread">Unread</option>
+                <option value="read">Read</option>
+              </select>
+            </div>
+            
+            <div className="px-4 py-2 bg-[#1A1A24] rounded-2xl border border-[#252530]">
+              <span className="text-[#8B8B98] text-sm">Total: </span>
+              <span className="text-white font-bold ml-1">{inquiries.length}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {inquiries.length === 0 ? (
-        <div className="bg-white p-10 rounded-xl text-center shadow-sm border border-dashed border-gray-300">
-          <p className="text-gray-500 text-lg">No project inquiries found yet.</p>
+      {filteredInquiries.length === 0 ? (
+        <div className="bg-[#13131A] p-16 rounded-3xl text-center border border-[#252530]">
+          <div className="w-20 h-20 bg-[#1A1A24] rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#252530]">
+            <MessageCircle size={32} className="text-[#8B8B98]" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">No inquiries yet</h3>
+          <p className="text-[#8B8B98]">Project inquiries will appear here</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {inquiries.map((item) => (
+          {filteredInquiries.map((item) => (
             <div 
               key={item.id} 
-              className={`bg-white rounded-2xl shadow-sm border transition-all hover:shadow-md overflow-hidden ${
-                item.status === 'unread' ? 'border-l-4 border-l-blue-500' : 'border-gray-200'
-              }`}
+              onClick={() => setSelectedInquiry(item)}
+              className="group bg-[#13131A] rounded-3xl border border-[#252530] hover:border-blue-600/50 transition-all duration-300 overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-blue-600/5"
             >
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-3">
-                  <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
-                    item.status === 'unread' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {item.status || 'new'}
-                  </span>
+              {/* Status Bar */}
+              <div className={`h-1.5 w-full ${item.status === 'unread' ? 'bg-linear-to-r from-blue-600 to-purple-600' : 'bg-[#252530]'}`}></div>
+              
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border ${getStatusColor(item.status)}`}>
+                    {getStatusIcon(item.status)}
+                    <span className="uppercase">{item.status || 'new'}</span>
+                  </div>
                   <button 
-                    onClick={() => deleteRecord(item.id)}
-                    className="text-gray-300 hover:text-red-500 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); deleteRecord(item.id); }}
+                    className="p-2 bg-[#1A1A24] rounded-xl text-[#8B8B98] hover:text-red-500 hover:bg-red-600/10 transition-all border border-[#252530] opacity-0 group-hover:opacity-100"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
 
-                <div className="space-y-3">
-                  <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                    <User size={16} className="text-gray-400" /> {item.name || 'No Name'}
-                  </h3>
-                  
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p className="flex items-center gap-2"><Mail size={14} /> {item.email || 'No Email'}</p>
-                    <p className="flex items-center gap-2"><Phone size={14} /> {item.phone || 'No Phone'}</p>
+                {/* Content */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-3">
+                      <User size={16} className="text-blue-500" />
+                      {item.name || 'No Name'}
+                    </h3>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-[#8B8B98] bg-[#1A1A24] p-2 rounded-xl border border-[#252530]">
+                        <Mail size={14} className="text-blue-500" />
+                        <span className="truncate">{item.email || 'No Email'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[#8B8B98] bg-[#1A1A24] p-2 rounded-xl border border-[#252530]">
+                        <Phone size={14} className="text-green-500" />
+                        <span>{item.phone || 'No Phone'}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                    <p className="text-[11px] text-blue-500 font-bold uppercase mb-1">Project Interested</p>
-                    <p className="text-sm font-semibold text-blue-900">{item.projectName || 'Not specified'}</p>
+                  {/* Project Card */}
+                  <div className="bg-linear-to-r from-blue-600/10 to-purple-600/10 p-4 rounded-2xl border border-blue-600/20">
+                    <p className="text-[10px] text-blue-400 font-bold uppercase mb-2 flex items-center gap-1">
+                      <Briefcase size={12} /> Project Interested
+                    </p>
+                    <p className="text-base font-bold text-white">{item.projectName || 'Not specified'}</p>
                   </div>
 
+                  {/* Message Preview */}
                   {item.message && (
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                       <p className="text-[11px] text-gray-400 font-bold uppercase mb-1">Message</p>
-                       <p className="text-sm text-gray-700 italic">"{item.message}"</p>
+                    <div className="bg-[#1A1A24] p-3 rounded-2xl border border-[#252530]">
+                      <p className="text-xs text-[#8B8B98] mb-1">Message</p>
+                      <p className="text-sm text-white italic line-clamp-2">"{item.message}"</p>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-50">
-                    <div className="flex items-center gap-1 text-[11px] text-gray-400">
-                      <Calendar size={12} /> {formatDate(item.submittedAt)}
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-4 border-t border-[#252530]">
+                    <div className="flex items-center gap-1.5 text-xs text-[#8B8B98]">
+                      <Calendar size={12} className="text-purple-500" />
+                      {formatDate(item.submittedAt)}
                     </div>
                     <button 
-                      onClick={() => toggleStatus(item.id, item.status)}
-                      className={`flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full transition-colors ${
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        toggleStatus(item.id, item.status); 
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                         item.status === 'unread' 
-                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                          : 'bg-[#1A1A24] text-[#8B8B98] hover:text-white border border-[#252530]'
                       }`}
                     >
-                      {item.status === 'unread' ? <><Eye size={14} /> Mark Read</> : <><EyeOff size={14} /> Mark Unread</>}
+                      {item.status === 'unread' ? <Eye size={14} /> : <EyeOff size={14} />}
+                      {item.status === 'unread' ? 'Mark Read' : 'Mark Unread'}
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedInquiry && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedInquiry(null)}
+        >
+          <div 
+            className="bg-[#13131A] rounded-3xl w-full max-w-2xl border border-[#252530] shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-r from-blue-600/20 to-purple-600/20"></div>
+              <div className="relative p-8 border-b border-[#252530]">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[#8B8B98] text-xs uppercase tracking-wider mb-2">Inquiry Details</p>
+                    <h2 className="text-2xl font-bold text-white">{selectedInquiry.name || 'No Name'}</h2>
+                    <div className={`mt-3 px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 border ${getStatusColor(selectedInquiry.status)}`}>
+                      {getStatusIcon(selectedInquiry.status)}
+                      <span className="uppercase">{selectedInquiry.status}</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedInquiry(null)}
+                    className="p-3 bg-[#1A1A24] rounded-xl text-[#8B8B98] hover:text-white hover:bg-red-600/20 transition-all border border-[#252530]"
+                  >
+                    <XCircle size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#1A1A24] p-4 rounded-2xl border border-[#252530]">
+                  <p className="text-[#8B8B98] text-xs mb-2">Email Address</p>
+                  <a 
+                    href={`mailto:${selectedInquiry.email}`} 
+                    className="text-blue-400 font-medium flex items-center gap-2 hover:text-blue-300 transition-colors"
+                  >
+                    <Mail size={16} />
+                    {selectedInquiry.email || 'No Email'}
+                  </a>
+                </div>
+                <div className="bg-[#1A1A24] p-4 rounded-2xl border border-[#252530]">
+                  <p className="text-[#8B8B98] text-xs mb-2">Phone Number</p>
+                  <a 
+                    href={`tel:${selectedInquiry.phone}`} 
+                    className="text-green-400 font-medium flex items-center gap-2 hover:text-green-300 transition-colors"
+                  >
+                    <Phone size={16} />
+                    {selectedInquiry.phone || 'No Phone'}
+                  </a>
+                </div>
+              </div>
+
+              <div className="bg-linear-to-r from-blue-600/10 to-purple-600/10 p-6 rounded-2xl border border-blue-600/20">
+                <p className="text-blue-400 text-xs font-bold uppercase mb-3 flex items-center gap-2">
+                  <Briefcase size={14} /> Project Interested
+                </p>
+                <p className="text-xl font-bold text-white">{selectedInquiry.projectName || 'Not specified'}</p>
+              </div>
+
+              {(selectedInquiry.message) && (
+                <div className="bg-[#1A1A24] p-6 rounded-2xl border border-[#252530]">
+                  <p className="text-[#8B8B98] text-xs mb-3">Message</p>
+                  <p className="text-white leading-relaxed">{selectedInquiry.message}</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-6 border-t border-[#252530]">
+                <div className="flex items-center gap-2 text-sm text-[#8B8B98]">
+                  <Calendar size={16} className="text-purple-500" />
+                  {formatDate(selectedInquiry.submittedAt)}
+                </div>
+                <button 
+                  onClick={() => {
+                    toggleStatus(selectedInquiry.id, selectedInquiry.status);
+                    setSelectedInquiry(null);
+                  }}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                    selectedInquiry.status === 'unread' 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-[#1A1A24] text-white hover:bg-[#252530] border border-[#353540]'
+                  }`}
+                >
+                  {selectedInquiry.status === 'unread' ? <Eye size={18} /> : <EyeOff size={18} />}
+                  Mark as {selectedInquiry.status === 'unread' ? 'Read' : 'Unread'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

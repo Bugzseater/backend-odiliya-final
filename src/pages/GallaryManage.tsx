@@ -4,9 +4,13 @@ import {
   collection, addDoc, serverTimestamp, 
   query, orderBy, onSnapshot, deleteDoc, doc 
 } from "firebase/firestore";
-import { Upload, Trash2, Image as ImageIcon, X, Link } from "lucide-react";
+import { 
+  Upload, Trash2, Image as ImageIcon, X, Link, 
+  Loader2, Grid, Globe, CheckCircle,
+  Sparkles, Eye, ExternalLink
+} from "lucide-react";
 
-// Gallery image type එක define කරනවා
+// Gallery image type define කරනවා
 interface GalleryImage {
   id: string;
   url: string;
@@ -23,6 +27,7 @@ function GallaryManage() {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [urlPreview, setUrlPreview] = useState("");
+  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
 
   // Cloudflare Configurations
   const WORKER_URL = "https://odiliya-uploader.devmiez.workers.dev";
@@ -88,10 +93,10 @@ function GallaryManage() {
       setUploading(false);
       setFile(null);
       setPreview(null);
-      alert("පින්තූරය සාර්ථකව Cloudflare R2 වෙත එක් කළා!");
+      alert("✅ පින්තූරය සාර්ථකව Cloudflare R2 වෙත එක් කළා!");
     } catch (error) {
       console.error("Upload Error:", error);
-      alert("Upload එක අසාර්ථකයි! CORS settings පරීක්ෂා කරන්න.");
+      alert("❌ Upload එක අසාර්ථකයි! CORS settings පරීක්ෂා කරන්න.");
       setUploading(false);
     }
   };
@@ -112,9 +117,10 @@ function GallaryManage() {
       setImageUrl("");
       setUrlPreview("");
       setShowUrlInput(false);
+      alert("✅ URL එකෙන් පින්තූරය එකතු කළා!");
     } catch (error) {
       console.error(error);
-      alert("URL එකෙන් එකතු කිරීම අසාර්ථකයි!");
+      alert("❌ URL එකෙන් එකතු කිරීම අසාර්ථකයි!");
     } finally {
       setUploading(false);
     }
@@ -127,136 +133,332 @@ function GallaryManage() {
         await deleteDoc(doc(db, "gallery", id));
       } catch (error) {
         console.error(error);
-        alert("මකා දැමීම අසාර්ථකයි!");
+        alert("❌ මකා දැමීම අසාර්ථකයි!");
       }
     }
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <ImageIcon className="text-blue-600" /> Gallery Management (R2 Enabled)
-          </h2>
-          <p className="text-gray-500">පින්තූර Cloudflare R2 Storage එකට කෙලින්ම upload කරන්න.</p>
+    <div className="min-h-screen bg-[#0A0A0F] p-4 md:p-8 font-sans">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <div className="bg-[#13131A] rounded-3xl p-8 border border-[#252530]">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-linear-to-r from-blue-600/20 to-cyan-600/20 rounded-2xl border border-blue-600/30">
+                <ImageIcon className="text-blue-500" size={32} />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">Gallery Management</h1>
+                <p className="text-[#8B8B98] mt-1 flex items-center gap-2">
+                  <Sparkles size={14} className="text-blue-500" />
+                  Cloudflare R2 Storage Integration
+                </p>
+              </div>
+            </div>
+            
+            {/* Stats */}
+            <div className="flex items-center gap-3">
+              <div className="px-4 py-2 bg-[#1A1A24] rounded-xl border border-[#252530]">
+                <span className="text-[#8B8B98] text-sm">Total Images: </span>
+                <span className="text-white font-bold ml-1">{images.length}</span>
+              </div>
+              <div className="px-4 py-2 bg-linear-to-r from-blue-600/20 to-cyan-600/20 rounded-xl border border-blue-600/30">
+                <span className="text-blue-500 text-sm flex items-center gap-1">
+                  <CheckCircle size={14} /> R2 Active
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Upload Section */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-10">
-          <div className="flex gap-2 mb-4">
+        <div className="bg-[#13131A] rounded-3xl p-8 border border-[#252530]">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-1 h-8 bg-linear-to-b from-blue-500 to-cyan-500 rounded-full"></div>
+            <h2 className="text-lg font-semibold text-white">Upload New Images</h2>
+          </div>
+
+          {/* Mode Toggle */}
+          <div className="flex gap-3 mb-8">
             <button 
               onClick={() => setShowUrlInput(false)} 
-              className={`px-4 py-2 rounded-lg transition-colors ${!showUrlInput ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
+                !showUrlInput 
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-600 text-white shadow-lg' 
+                  : 'bg-[#1A1A24] text-[#8B8B98] hover:text-white border border-[#252530]'
+              }`}
             >
+              <Upload size={18} />
               Upload File
             </button>
             <button 
               onClick={() => setShowUrlInput(true)} 
-              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${showUrlInput ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
+                showUrlInput 
+                  ? 'bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-lg' 
+                  : 'bg-[#1A1A24] text-[#8B8B98] hover:text-white border border-[#252530]'
+              }`}
             >
-              <Link size={16} /> Add from URL
+              <Link size={18} />
+              Add from URL
             </button>
           </div>
 
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 hover:bg-gray-50 transition-colors">
+          {/* Upload Area */}
+          <div className="bg-[#1A1A24] border-2 border-dashed border-[#252530] rounded-2xl p-8 hover:border-blue-600/50 transition-all">
             {showUrlInput ? (
-              <div className="w-full max-w-md space-y-4">
-                <input 
-                  type="url" 
-                  value={imageUrl} 
-                  onChange={(e) => { setImageUrl(e.target.value); setUrlPreview(e.target.value); }} 
-                  placeholder="https://example.com/image.jpg" 
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                />
-                {urlPreview && (
-                  <img 
-                    src={urlPreview} 
-                    className="rounded-lg max-h-48 mx-auto shadow-sm" 
-                    alt="Preview" 
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Invalid+URL';
-                    }}
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div className="relative group">
+                  <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8B8B98] group-focus-within:text-purple-500 transition-colors" size={20} />
+                  <input 
+                    type="url" 
+                    value={imageUrl} 
+                    onChange={(e) => { setImageUrl(e.target.value); setUrlPreview(e.target.value); }} 
+                    placeholder="https://example.com/image.jpg" 
+                    className="w-full pl-12 pr-4 py-4 bg-[#13131A] border border-[#252530] rounded-xl text-white placeholder-[#4A4A5A] focus:ring-2 focus:ring-purple-600/50 outline-none transition-all" 
                   />
+                </div>
+                
+                {urlPreview && (
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-linear-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-50"></div>
+                    <div className="relative bg-[#13131A] p-4 rounded-2xl border border-[#252530]">
+                      <img 
+                        src={urlPreview} 
+                        className="rounded-xl max-h-64 mx-auto shadow-2xl" 
+                        alt="Preview" 
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Invalid+URL';
+                        }}
+                      />
+                      <div className="absolute top-2 right-2 px-2 py-1 bg-yellow-600/20 text-yellow-500 text-xs rounded-lg border border-yellow-600/30">
+                        Preview
+                      </div>
+                    </div>
+                  </div>
                 )}
+
                 <button 
                   onClick={handleAddFromUrl} 
                   disabled={!imageUrl || uploading} 
-                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg disabled:opacity-50 font-medium"
+                  className="w-full py-4 bg-linear-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg shadow-purple-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                   {uploading ? "Adding..." : "Add to Gallery"}
+                  {uploading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Adding from URL...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink size={20} />
+                      Add to Gallery
+                    </>
+                  )}
                 </button>
               </div>
             ) : (
-              <>
+              <div className="text-center">
                 {preview ? (
-                  <div className="relative w-full max-w-xs">
-                    <img src={preview} alt="Preview" className="rounded-lg shadow-md max-h-48 mx-auto" />
+                  <div className="max-w-md mx-auto">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-cyan-600 rounded-2xl blur-xl opacity-50"></div>
+                      <div className="relative bg-[#13131A] p-4 rounded-2xl border border-[#252530]">
+                        <img 
+                          src={preview} 
+                          alt="Preview" 
+                          className="rounded-xl max-h-64 mx-auto shadow-2xl" 
+                        />
+                        <button 
+                          onClick={() => {setPreview(null); setFile(null);}} 
+                          className="absolute -top-2 -right-2 bg-red-600 text-white p-2 rounded-xl hover:bg-red-700 transition-all shadow-lg"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    
                     <button 
-                      onClick={() => {setPreview(null); setFile(null);}} 
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      onClick={handleUpload} 
+                      disabled={uploading}
+                      className="mt-6 w-full py-4 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-xl font-bold hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-600/25 flex items-center justify-center gap-2"
                     >
-                      <X size={16} />
+                      {uploading ? (
+                        <>
+                          <Loader2 className="animate-spin" size={20} />
+                          Uploading to R2...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={20} />
+                          Upload to Cloudflare R2
+                        </>
+                      )}
                     </button>
                   </div>
                 ) : (
-                  <label className="cursor-pointer flex flex-col items-center group">
-                    <div className="bg-blue-50 p-4 rounded-full group-hover:bg-blue-100 transition-colors">
-                      <Upload className="text-blue-600" size={32} />
+                  <label className="cursor-pointer flex flex-col items-center py-12 group">
+                    <div className="p-5 bg-[#252530] rounded-3xl group-hover:bg-blue-600/20 transition-all mb-4">
+                      <Upload className="text-[#8B8B98] group-hover:text-blue-500 transition-colors" size={48} />
                     </div>
-                    <span className="mt-3 text-gray-600 font-medium">Click to select an image</span>
-                    <p className="text-xs text-gray-400 mt-1">PNG, JPG or WebP (Max 10MB)</p>
-                    <input type="file" className="hidden" onChange={onFileChange} accept="image/*" />
+                    <span className="text-white font-medium text-lg mb-2">Click to select an image</span>
+                    <p className="text-[#8B8B98] text-sm">PNG, JPG or WebP (Max 10MB)</p>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      onChange={onFileChange} 
+                      accept="image/*" 
+                    />
                   </label>
                 )}
-                {file && !uploading && (
-                  <button 
-                    onClick={handleUpload} 
-                    className="mt-6 bg-green-600 hover:bg-green-700 text-white px-8 py-2 rounded-lg font-bold transition-colors"
-                  >
-                    Upload to Cloudflare R2
-                  </button>
-                )}
-                {uploading && (
-                  <div className="mt-6 flex items-center gap-2 text-blue-600 font-bold animate-pulse">
-                    Uploading to R2...
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
         </div>
 
         {/* Gallery Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {images.map((img) => (
-            <div key={img.id} className="group relative bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 aspect-square">
-              <img 
-                src={img.url} 
-                alt={img.name || 'Gallery image'} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                loading="lazy"
-                onError={(e) => { 
-                  e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Image+Load+Error'; 
-                }} 
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <button 
-                  onClick={() => handleDelete(img.id)} 
-                  className="bg-white p-3 rounded-full text-red-600 shadow-xl hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 size={20} />
-                </button>
+        <div className="bg-[#13131A] rounded-3xl p-8 border border-[#252530]">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-1 h-8 bg-linear-to-b from-purple-500 to-pink-500 rounded-full"></div>
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Grid size={20} className="text-purple-500" />
+              Image Gallery
+            </h2>
+          </div>
+
+          {images.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-[#1A1A24] rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#252530]">
+                <ImageIcon size={40} className="text-[#8B8B98]" />
               </div>
-              {img.storagePath === "cloudflare-r2" && (
-                <div className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow-sm">
-                  R2 STORAGE
-                </div>
-              )}
+              <h3 className="text-xl font-bold text-white mb-2">No images yet</h3>
+              <p className="text-[#8B8B98]">Upload your first image to get started</p>
             </div>
-          ))}
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {images.map((img) => (
+                <div 
+                  key={img.id} 
+                  className="group relative aspect-square bg-[#1A1A24] rounded-2xl overflow-hidden border border-[#252530] hover:border-blue-600/50 transition-all cursor-pointer"
+                  onClick={() => setSelectedImage(img)}
+                >
+                  <img 
+                    src={img.url} 
+                    alt={img.name || 'Gallery image'} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    loading="lazy"
+                    onError={(e) => { 
+                      e.currentTarget.src = 'https://via.placeholder.com/300x300?text=Error'; 
+                    }} 
+                  />
+                  
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-linear-to-t from-[#0A0A0F] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(img.id);
+                        }} 
+                        className="w-full py-2 bg-red-600/20 text-red-500 rounded-xl hover:bg-red-600/30 transition-all flex items-center justify-center gap-2 backdrop-blur-sm border border-red-600/30"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Storage Badge */}
+                  {img.storagePath === "cloudflare-r2" ? (
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-linear-to-r from-blue-600 to-cyan-600 text-white text-[10px] rounded-lg font-bold shadow-lg flex items-center gap-1">
+                      <CheckCircle size={10} />
+                      R2
+                    </div>
+                  ) : (
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-linear-to-r from-purple-600 to-pink-600 text-white text-[10px] rounded-lg font-bold shadow-lg flex items-center gap-1">
+                      <Globe size={10} />
+                      URL
+                    </div>
+                  )}
+
+                  {/* View Button */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(img.url, '_blank');
+                    }}
+                    className="absolute top-2 right-2 p-2 bg-[#1A1A24] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600/20 border border-[#252530]"
+                  >
+                    <Eye size={14} className="text-[#8B8B98] hover:text-blue-500" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Image Preview Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div 
+            className="relative max-w-5xl w-full"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="absolute -top-12 right-0 flex items-center gap-3">
+              <button
+                onClick={() => window.open(selectedImage.url, '_blank')}
+                className="px-4 py-2 bg-[#1A1A24] text-white rounded-xl hover:bg-blue-600/20 transition-all border border-[#252530] flex items-center gap-2"
+              >
+                <ExternalLink size={16} />
+                Open Original
+              </button>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="p-3 bg-[#1A1A24] text-white rounded-xl hover:bg-red-600/20 transition-all border border-[#252530]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 bg-linear-to-r from-blue-600 to-purple-600 rounded-3xl blur-2xl opacity-30"></div>
+              <div className="relative bg-[#13131A] p-4 rounded-3xl border border-[#252530]">
+                <img 
+                  src={selectedImage.url} 
+                  alt={selectedImage.name}
+                  className="w-full max-h-[80vh] object-contain rounded-2xl"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex justify-between items-center">
+              <div>
+                <p className="text-white font-medium">{selectedImage.name}</p>
+                <p className="text-[#8B8B98] text-sm mt-1">
+                  Storage: {selectedImage.storagePath === 'cloudflare-r2' ? 'Cloudflare R2' : 'External URL'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (confirm("ඔබට මෙම පින්තූරය මැකීමට අවශ්‍ය බව සහතිකද?")) {
+                    handleDelete(selectedImage.id);
+                    setSelectedImage(null);
+                  }
+                }}
+                className="px-6 py-3 bg-red-600/20 text-red-500 rounded-xl hover:bg-red-600/30 transition-all border border-red-600/30 flex items-center gap-2"
+              >
+                <Trash2 size={18} />
+                Delete Image
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
