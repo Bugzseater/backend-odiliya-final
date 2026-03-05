@@ -5,10 +5,10 @@ import {
   Mail, Phone, Calendar, 
   XCircle, Trash2, RefreshCw, 
   Eye, EyeOff, Download, MessageSquare, 
-  LayoutDashboard, Database
+  LayoutDashboard, Database, Filter,
+  Search, Clock,
 } from "lucide-react";
 
-// Define the type for inquiries
 interface Inquiry {
   id: string;
   name?: string;
@@ -39,7 +39,6 @@ const ContactDetails = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const inquiriesData = snapshot.docs.map(doc => {
         const data = doc.data();
-        // Handle the date properly
         let submittedAt = null;
         if (data.submittedAt) {
           if (typeof data.submittedAt.toDate === 'function') {
@@ -91,12 +90,10 @@ const ContactDetails = () => {
   const formatDate = (date: any) => {
     if (!date) return "No date";
     
-    // If it's a Firestore timestamp with toDate method
     if (date && typeof date.toDate === 'function') {
       date = date.toDate();
     }
     
-    // If it's now a Date object
     if (date instanceof Date) {
       return new Intl.DateTimeFormat('en-US', {
         year: 'numeric', 
@@ -142,27 +139,64 @@ const ContactDetails = () => {
     a.click();
   };
 
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'unread': return 'bg-red-600/20 text-red-400 border-red-600/30';
+      case 'read': return 'bg-green-600/20 text-green-400 border-green-600/30';
+      default: return 'bg-[#252530] text-[#8B8B98] border-[#353540]';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'unread': return <EyeOff size={14} />;
+      case 'read': return <Eye size={14} />;
+      default: return <Clock size={14} />;
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
-      {/* Top Navigation / Tabs */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <LayoutDashboard className="text-blue-600" /> Admin Dashboard
-          </h1>
-          <p className="text-sm text-gray-500">Manage all incoming communications</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-[#13131A] rounded-3xl p-8 border border-[#252530]">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-600/30">
+                <LayoutDashboard className="text-blue-500" size={28} />
+              </div>
+              <h1 className="text-3xl font-bold text-white">Contact Management</h1>
+            </div>
+            <p className="text-[#8B8B98] ml-2">Manage all incoming communications</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="px-4 py-2 bg-[#1A1A24] rounded-2xl border border-[#252530]">
+              <span className="text-[#8B8B98] text-sm">Total: </span>
+              <span className="text-white font-bold ml-1">{inquiries.length}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+        {/* Tabs */}
+        <div className="flex mt-8 bg-[#1A1A24] p-1.5 rounded-2xl border border-[#252530] w-fit">
           <button 
             onClick={() => setActiveTab("contact_us")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-all ${activeTab === 'contact_us' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
+              activeTab === 'contact_us' 
+                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                : 'text-[#8B8B98] hover:text-white'
+            }`}
           >
             <Database size={18} /> Contact Us
           </button>
           <button 
             onClick={() => setActiveTab("contact_inquiries")}
-            className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-all ${activeTab === 'contact_inquiries' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'}`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all ${
+              activeTab === 'contact_inquiries' 
+                ? 'bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-lg' 
+                : 'text-[#8B8B98] hover:text-white'
+            }`}
           >
             <MessageSquare size={18} /> Contact Inquiries
           </button>
@@ -170,26 +204,34 @@ const ContactDetails = () => {
       </div>
 
       {/* Action Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 items-center">
+      <div className="bg-[#13131A] p-6 rounded-3xl border border-[#252530] flex flex-col md:flex-row gap-4 items-center">
         <div className="relative flex-1 w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8B8B98]" size={18} />
           <input
             type="text"
             placeholder="Search records..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-4 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full pl-12 pr-4 py-3 bg-[#1A1A24] border border-[#252530] rounded-2xl text-white placeholder-[#8B8B98] focus:ring-2 focus:ring-blue-600/50 outline-none transition-all"
           />
         </div>
-        <div className="flex gap-2">
-          <select 
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-xl text-sm outline-none"
+        <div className="flex gap-3">
+          <div className="flex items-center gap-2 bg-[#1A1A24] p-2 rounded-2xl border border-[#252530]">
+            <Filter size={16} className="text-[#8B8B98]" />
+            <select 
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="bg-transparent text-white text-sm outline-none cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="unread">Unread</option>
+              <option value="read">Read</option>
+            </select>
+          </div>
+          <button 
+            onClick={exportToCSV} 
+            className="flex items-center gap-2 px-6 py-2 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-600/25"
           >
-            <option value="all">All Status</option>
-            <option value="unread">Unread</option>
-            <option value="read">Read</option>
-          </select>
-          <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm">
             <Download size={16} /> Export
           </button>
         </div>
@@ -197,98 +239,166 @@ const ContactDetails = () => {
 
       {/* Main List */}
       {loading ? (
-        <div className="flex justify-center py-20"><RefreshCw className="animate-spin text-blue-600 w-10 h-10" /></div>
+        <div className="flex justify-center py-20">
+          <div className="relative">
+            <div className="absolute inset-0 bg-blue-600/20 blur-xl rounded-full"></div>
+            <RefreshCw className="animate-spin text-blue-500 relative z-10" size={40} />
+          </div>
+        </div>
+      ) : filteredInquiries.length === 0 ? (
+        <div className="bg-[#13131A] p-16 rounded-3xl text-center border border-[#252530]">
+          <div className="w-20 h-20 bg-[#1A1A24] rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#252530]">
+            <MessageSquare size={32} className="text-[#8B8B98]" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2">No records found</h3>
+          <p className="text-[#8B8B98]">Try adjusting your search or filter</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredInquiries.map((item) => (
             <div 
               key={item.id} 
               onClick={() => setSelectedInquiry(item)}
-              className={`bg-white p-5 rounded-2xl border transition-all cursor-pointer hover:shadow-lg relative overflow-hidden ${item.status === 'unread' ? 'border-l-4 border-l-red-500' : 'border-gray-100'}`}
+              className="group bg-[#13131A] rounded-3xl border border-[#252530] hover:border-blue-600/50 transition-all duration-300 cursor-pointer hover:shadow-xl hover:shadow-blue-600/5 overflow-hidden"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-2 rounded-lg ${item.status === 'unread' ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}`}>
-                   {item.status === 'unread' ? <EyeOff size={20} /> : <Eye size={20} />}
+              {/* Status Bar */}
+              <div className={`h-1.5 w-full ${item.status === 'unread' ? 'bg-linear-to-r from-red-600 to-pink-600' : 'bg-[#252530]'}`}></div>
+              
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border ${getStatusColor(item.status)}`}>
+                    {getStatusIcon(item.status)}
+                    <span className="uppercase">{item.status || 'new'}</span>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); deleteInquiry(item.id); }}
+                    className="p-2 bg-[#1A1A24] rounded-xl text-[#8B8B98] hover:text-red-500 hover:bg-red-600/10 transition-all border border-[#252530] opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); deleteInquiry(item.id); }}
-                  className="text-gray-300 hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
 
-              <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">{item.name || 'No Name'}</h3>
-              <p className="text-sm text-gray-500 mb-4 truncate">{item.email || 'No Email'}</p>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <Phone size={12} /> {item.phone || 'No Phone'}
+                <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">{item.name || 'No Name'}</h3>
+                
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2 text-sm bg-[#1A1A24] p-3 rounded-xl border border-[#252530]">
+                    <Mail size={14} className="text-blue-500" />
+                    <span className="text-[#8B8B98] truncate">{item.email || 'No Email'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm bg-[#1A1A24] p-3 rounded-xl border border-[#252530]">
+                    <Phone size={14} className="text-green-500" />
+                    <span className="text-[#8B8B98]">{item.phone || 'No Phone'}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <Calendar size={12} /> {formatDate(item.submittedAt)}
-                </div>
-              </div>
 
-              <div className="pt-4 border-t border-gray-50 flex justify-between items-center">
-                <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
-                  {activeTab.replace('_', ' ')}
-                </span>
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    updateStatus(item.id, item.status === 'unread' ? 'read' : 'unread'); 
-                  }}
-                  className={`text-xs px-3 py-1 rounded-full font-medium ${item.status === 'unread' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-gray-100 text-gray-600'}`}
-                >
-                  Mark as {item.status === 'unread' ? 'Read' : 'Unread'}
-                </button>
+                {/* Message Preview */}
+                {(item.message || item.projectName) && (
+                  <div className="bg-[#1A1A24] p-4 rounded-2xl border border-[#252530] mb-4">
+                    <p className="text-xs text-[#8B8B98] mb-2">Content</p>
+                    <p className="text-sm text-white line-clamp-2">
+                      {item.message || item.projectName}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-[#252530]">
+                  <div className="flex items-center gap-1.5 text-xs text-[#8B8B98]">
+                    <Calendar size={12} className="text-purple-500" />
+                    {formatDate(item.submittedAt)}
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-[#8B8B98] bg-[#1A1A24] px-3 py-1 rounded-full border border-[#252530]">
+                    {activeTab.replace('_', ' ')}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Detail View Modal */}
+      {/* Detail Modal */}
       {selectedInquiry && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setSelectedInquiry(null)}>
-          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="bg-blue-600 p-6 text-white flex justify-between items-center">
-              <div>
-                <p className="text-blue-100 text-xs uppercase tracking-widest mb-1">Inquiry Details</p>
-                <h2 className="text-xl font-bold">{selectedInquiry.name || 'No Name'}</h2>
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={() => setSelectedInquiry(null)}
+        >
+          <div 
+            className="bg-[#13131A] rounded-3xl w-full max-w-2xl border border-[#252530] shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-r from-blue-600/20 to-purple-600/20"></div>
+              <div className="relative p-8 border-b border-[#252530]">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[#8B8B98] text-xs uppercase tracking-wider mb-2">Contact Details</p>
+                    <h2 className="text-2xl font-bold text-white">{selectedInquiry.name || 'No Name'}</h2>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedInquiry(null)}
+                    className="p-3 bg-[#1A1A24] rounded-xl text-[#8B8B98] hover:text-white hover:bg-red-600/20 transition-all border border-[#252530]"
+                  >
+                    <XCircle size={20} />
+                  </button>
+                </div>
               </div>
-              <button onClick={() => setSelectedInquiry(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><XCircle size={24} /></button>
             </div>
             
             <div className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-gray-400 text-xs mb-1">Email Address</p>
-                  <a href={`mailto:${selectedInquiry.email}`} className="text-blue-600 font-medium flex items-center gap-2">
-                    <Mail size={14} /> {selectedInquiry.email || 'No Email'}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#1A1A24] p-4 rounded-2xl border border-[#252530]">
+                  <p className="text-[#8B8B98] text-xs mb-2">Email Address</p>
+                  <a 
+                    href={`mailto:${selectedInquiry.email}`} 
+                    className="text-blue-400 font-medium flex items-center gap-2 hover:text-blue-300 transition-colors"
+                  >
+                    <Mail size={16} />
+                    {selectedInquiry.email || 'No Email'}
                   </a>
                 </div>
-                <div>
-                  <p className="text-gray-400 text-xs mb-1">Phone Number</p>
-                  <a href={`tel:${selectedInquiry.phone}`} className="text-gray-900 font-medium flex items-center gap-2">
-                    <Phone size={14} /> {selectedInquiry.phone || 'No Phone'}
+                <div className="bg-[#1A1A24] p-4 rounded-2xl border border-[#252530]">
+                  <p className="text-[#8B8B98] text-xs mb-2">Phone Number</p>
+                  <a 
+                    href={`tel:${selectedInquiry.phone}`} 
+                    className="text-green-400 font-medium flex items-center gap-2 hover:text-green-300 transition-colors"
+                  >
+                    <Phone size={16} />
+                    {selectedInquiry.phone || 'No Phone'}
                   </a>
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-2xl">
-                <p className="text-gray-400 text-xs mb-2">Message/Project</p>
-                <p className="text-gray-800 leading-relaxed">
+              <div className="bg-[#1A1A24] p-6 rounded-2xl border border-[#252530]">
+                <p className="text-[#8B8B98] text-xs mb-3">Message / Project</p>
+                <p className="text-white leading-relaxed">
                   {selectedInquiry.message || selectedInquiry.projectName || "No message content provided."}
                 </p>
               </div>
 
-              <div className="flex justify-between items-center text-sm text-gray-500 pt-4 border-t border-gray-100">
-                <span className="flex items-center gap-2"><Calendar size={14}/> {formatDate(selectedInquiry.submittedAt)}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${selectedInquiry.status === 'unread' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                  {selectedInquiry.status || 'unknown'}
-                </span>
+              <div className="flex items-center justify-between pt-6 border-t border-[#252530]">
+                <div className="flex items-center gap-2 text-sm text-[#8B8B98]">
+                  <Calendar size={16} className="text-purple-500" />
+                  {formatDate(selectedInquiry.submittedAt)}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border ${getStatusColor(selectedInquiry.status)}`}>
+                    {getStatusIcon(selectedInquiry.status)}
+                    <span className="uppercase">{selectedInquiry.status || 'unknown'}</span>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      updateStatus(selectedInquiry.id, selectedInquiry.status === 'unread' ? 'read' : 'unread');
+                      setSelectedInquiry(null);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      selectedInquiry.status === 'unread' 
+                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                        : 'bg-[#1A1A24] text-white hover:bg-[#252530] border border-[#353540]'
+                    }`}
+                  >
+                    Mark as {selectedInquiry.status === 'unread' ? 'Read' : 'Unread'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
