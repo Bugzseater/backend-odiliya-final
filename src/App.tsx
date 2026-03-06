@@ -15,6 +15,7 @@ import ProjectsInquiries from './pages/ProjectsInquiries';
 import GallaryManage from './pages/GallaryManage';
 import MetaDetails from './pages/MetaDetails';
 import Dashboard from './pages/Dashboard';
+import ClientManagment from './pages/ClientManagment';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex min-h-screen bg-gray-50">
@@ -124,6 +125,16 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/client-management"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ClientManagment />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           
           <Route
             path="/meta"
@@ -135,6 +146,8 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+
+        
           
           {/* 404 Redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />

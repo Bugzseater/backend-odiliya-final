@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../firebaseConfig'; 
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { Trash2, Edit3, PlusCircle, Newspaper, Loader2, Image as ImageIcon, X, Bold, Italic, Palette } from 'lucide-react';
+import { 
+  Trash2, Edit3, PlusCircle, Newspaper, Loader2, Image as ImageIcon, 
+  X, Bold, Italic, Palette, Calendar, Eye, Copy, Check,
+  ChevronDown, ChevronUp, AlertCircle, FileText, Clock,
+  Tag, User, Share2, Download, Star, BookOpen
+} from 'lucide-react';
 
 const TEXT_COLORS = ['#000000', '#333333', '#666666', '#ffffff', '#dc2626', '#ea580c', '#16a34a', '#2563eb', '#7c3aed'];
 
@@ -12,10 +17,16 @@ const AdminNews: React.FC = () => {
   const [newsList, setNewsList] = useState<any[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState({
+    basic: true,
+    content: true,
+    image: true
+  });
 
   // ✅ Cloudflare Configurations
   const WORKER_URL = "https://odiliya-uploader.devmiez.workers.dev";
-  const NEWS_R2_URL = "https://pub-875fd3bdd9254e20b280dc9ba8f1a7b7.r2.dev"; // ඔබේ අලුත් News Bucket URL එක මෙතනට දමන්න
+  const NEWS_R2_URL = "https://pub-875fd3bdd9254e20b280dc9ba8f1a7b7.r2.dev";
 
   const cursorPosRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
@@ -38,7 +49,7 @@ const AdminNews: React.FC = () => {
       body: file,
       headers: { 
         'Content-Type': file.type,
-        'Cache-Control': 'public, max-age=31536000' // වසරක් Cache කිරීම සඳහා
+        'Cache-Control': 'public, max-age=31536000'
       }
     });
     if (!response.ok) throw new Error("R2 upload failed");
@@ -108,6 +119,33 @@ const AdminNews: React.FC = () => {
     }));
   };
 
+  const handleCopy = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopySuccess(field);
+    setTimeout(() => setCopySuccess(null), 2000);
+  };
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const SectionHeader = ({ title, icon, section, color = "orange" }: any) => (
+    <div 
+      className={`flex items-center justify-between p-4 bg-gradient-to-r from-${color}-50 to-transparent border-b border-gray-100 cursor-pointer hover:from-${color}-100 transition-colors`}
+      onClick={() => toggleSection(section)}
+    >
+      <div className="flex items-center gap-2">
+        <div className={`p-2 bg-${color}-100 rounded-lg`}>
+          {icon}
+        </div>
+        <h3 className="font-semibold text-gray-800">{title}</h3>
+      </div>
+      <button className="p-1 hover:bg-white rounded-lg transition-colors">
+        {expandedSections[section] ? <ChevronUp size={18} className="text-gray-500" /> : <ChevronDown size={18} className="text-gray-500" />}
+      </button>
+    </div>
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -153,87 +191,327 @@ const AdminNews: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <Newspaper className="text-blue-600" /> {editId ? 'Edit News Article' : 'Publish News'}
-          </h1>
-          {editId && <button onClick={resetForm} className="text-slate-400 hover:text-red-500"><X size={24} /></button>}
+    <div className="min-h-screen bg-gray-50 p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto">
+        
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+                <Newspaper className="text-orange-600" size={32} />
+                News Management
+              </h1>
+              <p className="text-gray-500">Create and manage your news articles</p>
+            </div>
+            
+            {/* Status Badge */}
+            {editId && (
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium flex items-center gap-2 border border-orange-200">
+                  <Edit3 size={16} />
+                  Editing Mode
+                </span>
+                <button
+                  onClick={resetForm}
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Main Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-            <input type="text" placeholder="Article Title" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}  />
-            <textarea placeholder="Short Excerpt (Brief description)" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]" value={formData.excerpt} onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}  />
+          
+          {/* Basic Information */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <SectionHeader 
+              title="Article Information" 
+              icon={<FileText size={18} className="text-orange-600" />}
+              section="basic"
+              color="orange"
+            />
+            
+            {expandedSections.basic && (
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Article Title *</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter an attention-grabbing title" 
+                    className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all" 
+                    value={formData.title} 
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Short Excerpt</label>
+                  <textarea 
+                    placeholder="Write a brief summary of the article (will appear in previews)" 
+                    className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none min-h-[80px] resize-none" 
+                    value={formData.excerpt} 
+                    onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })} 
+                  />
+                  <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    This will appear in news listings and social shares
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-4 pt-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Calendar size={16} className="text-gray-400" />
+                    <span>{formData.date}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <div className="flex flex-wrap gap-2 mb-4 p-2 bg-slate-50 rounded-xl border border-slate-100">
-              <button type="button" onClick={() => formatText('bold')} className="p-2 hover:bg-white rounded-lg transition-all" title="Bold"><Bold size={18} /></button>
-              <button type="button" onClick={() => formatText('italic')} className="p-2 hover:bg-white rounded-lg transition-all" title="Italic"><Italic size={18} /></button>
-              <div className="relative">
-                <button type="button" onClick={() => setShowColorPicker(!showColorPicker)} className="p-2 hover:bg-white rounded-lg transition-all flex items-center gap-1" title="Text Color"><Palette size={18} /></button>
-                {showColorPicker && (
-                  <div className="absolute top-full left-0 mt-2 p-2 bg-white shadow-xl rounded-xl border border-slate-100 grid grid-cols-3 gap-1 z-50">
-                    {TEXT_COLORS.map(color => (
-                      <button key={color} type="button" onClick={() => { formatText('color', color); setShowColorPicker(false); }} className="w-6 h-6 rounded-full border border-slate-200" style={{ backgroundColor: color }} />
-                    ))}
+          {/* Content Editor */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <SectionHeader 
+              title="Article Content" 
+              icon={<BookOpen size={18} className="text-orange-600" />}
+              section="content"
+              color="orange"
+            />
+            
+            {expandedSections.content && (
+              <div className="p-6">
+                {/* Editor Toolbar */}
+                <div className="flex flex-wrap items-center gap-1 p-2 bg-gray-800 rounded-xl mb-4">
+                  <button
+                    type="button"
+                    onClick={() => formatText('bold')}
+                    className="p-2 text-white hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Bold"
+                  >
+                    <Bold size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('italic')}
+                    className="p-2 text-white hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Italic"
+                  >
+                    <Italic size={18} />
+                  </button>
+                  <div className="w-px h-6 bg-gray-700 mx-1" />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowColorPicker(!showColorPicker)}
+                      className="p-2 text-white hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-1"
+                      title="Text Color"
+                    >
+                      <Palette size={18} />
+                    </button>
+                    {showColorPicker && (
+                      <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-xl shadow-xl border border-gray-200 grid grid-cols-3 gap-1 z-50">
+                        {TEXT_COLORS.map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => { formatText('color', color); setShowColorPicker(false); }}
+                            className="w-6 h-6 rounded-full border border-gray-200 hover:scale-110 transition-transform"
+                            style={{ backgroundColor: color }}
+                            title={color}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-px h-6 bg-gray-700 mx-1" />
+                  <label className="p-2 text-white hover:bg-gray-700 rounded-lg transition-colors cursor-pointer flex items-center gap-2 text-sm" title="Insert Image">
+                    <ImageIcon size={18} />
+                    <span className="hidden sm:inline">Add Image</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={handleInlineImageUpload} disabled={inlineUploading} />
+                  </label>
+                  {inlineUploading && (
+                    <div className="ml-2 flex items-center gap-2 text-orange-400">
+                      <Loader2 size={14} className="animate-spin" />
+                      <span className="text-xs">Uploading...</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content Textarea */}
+                <textarea 
+                  placeholder="Write your article content here... HTML tags are supported for formatting" 
+                  className="w-full p-4 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none min-h-[300px] font-mono text-sm" 
+                  value={formData.content} 
+                  onSelect={(e: any) => cursorPosRef.current = { start: e.target.selectionStart, end: e.target.selectionEnd }}
+                  onChange={(e) => setFormData({ ...formData, content: e.target.value })} 
+                  required
+                />
+                
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-400 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    Images will be inserted at cursor position. HTML supported.
+                  </p>
+                  <span className="text-xs text-gray-400">
+                    {formData.content.length} characters
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Main Image */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <SectionHeader 
+              title="Thumbnail Image" 
+              icon={<ImageIcon size={18} className="text-orange-600" />}
+              section="image"
+              color="orange"
+            />
+            
+            {expandedSections.image && (
+              <div className="p-6">
+                <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 bg-gray-50">
+                  {formData.image ? (
+                    <div className="relative group">
+                      <img 
+                        src={formData.image} 
+                        className="w-full h-64 object-cover rounded-xl" 
+                        alt="Thumbnail preview" 
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                        <button 
+                          type="button" 
+                          onClick={() => setFormData({ ...formData, image: '' })} 
+                          className="bg-red-500 text-white p-3 rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center py-8 cursor-pointer">
+                      <div className="p-4 bg-orange-50 rounded-full mb-3">
+                        <ImageIcon size={32} className="text-orange-600" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 mb-1">Click to upload thumbnail</span>
+                      <span className="text-xs text-gray-400">PNG, JPG up to 10MB (1200x630px recommended)</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleMainImageUpload} disabled={uploading} />
+                      {uploading && (
+                        <div className="mt-3 flex items-center gap-2 text-orange-600">
+                          <Loader2 size={16} className="animate-spin" />
+                          <span className="text-sm">Uploading...</span>
+                        </div>
+                      )}
+                    </label>
+                  )}
+                </div>
+
+                {formData.image && (
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 truncate max-w-[200px]">{formData.image}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(formData.image, 'image')}
+                        className="p-1 text-gray-400 hover:text-orange-600 transition-colors"
+                        title="Copy image URL"
+                      >
+                        {copySuccess === 'image' ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                    <a 
+                      href={formData.image} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                    >
+                      <Eye size={14} /> Preview
+                    </a>
                   </div>
                 )}
               </div>
-              <div className="h-6 w-[1px] bg-slate-200 mx-1" />
-              <label className="p-2 hover:bg-white rounded-lg transition-all cursor-pointer flex items-center gap-2 text-sm text-blue-600 font-medium">
-                <ImageIcon size={18} /> {inlineUploading ? 'Uploading...' : 'Add Image to Content'}
-                <input type="file" className="hidden" accept="image/*" onChange={handleInlineImageUpload} disabled={inlineUploading} />
-              </label>
-            </div>
-            <textarea 
-              placeholder="Article Content (HTML supported)..." 
-              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[300px] font-mono text-sm" 
-              value={formData.content} 
-              onSelect={(e: any) => cursorPosRef.current = { start: e.target.selectionStart, end: e.target.selectionEnd }}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })} 
-            
-            />
+            )}
           </div>
 
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Main Thumbnail Image</h3>
-            <div className="flex items-center gap-4">
-              <label className="flex-1 border-2 border-dashed border-slate-200 p-6 rounded-2xl text-center hover:bg-slate-50 cursor-pointer transition-all">
-                <input type="file" className="hidden" accept="image/*" onChange={handleMainImageUpload} />
-                {uploading ? <Loader2 className="mx-auto animate-spin text-blue-500" /> : <div className="text-slate-400"><PlusCircle className="mx-auto mb-2" /> <p className="text-xs font-medium uppercase tracking-wider">Click to Upload</p></div>}
-              </label>
-              {formData.image && (
-                <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-md">
-                  <img src={formData.image} className="w-full h-full object-cover" alt="Preview" />
-                  <button type="button" onClick={() => setFormData({ ...formData, image: '' })} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button type="submit" disabled={loading || uploading || inlineUploading} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2">
-            {loading ? <Loader2 className="animate-spin" /> : editId ? 'Update Article' : 'Publish Article'}
+          {/* Submit Button */}
+          <button 
+            type="submit" 
+            disabled={loading || uploading || inlineUploading} 
+            className="w-full py-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                {editId ? 'Updating Article...' : 'Publishing Article...'}
+              </>
+            ) : (
+              <>
+                {editId ? <Edit3 size={20} /> : <PlusCircle size={20} />}
+                {editId ? 'Update Article' : 'Publish Article'}
+              </>
+            )}
           </button>
         </form>
 
-        <div className="mt-12 space-y-4">
-          <h3 className="text-lg font-bold text-slate-800 ml-2">Recently Published</h3>
+        {/* News List */}
+        <div className="mt-12">
+          <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+            <Newspaper size={20} className="text-orange-600" />
+            Recently Published ({newsList.length})
+          </h2>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {newsList.map((news) => (
-              <div key={news.id} className="bg-white rounded-3xl p-4 border border-slate-100 hover:shadow-xl transition-all group">
-                {news.image && <img src={news.image} className="w-full h-40 object-cover rounded-2xl mb-4" alt="Post" />}
-                <h4 className="font-bold text-slate-800 line-clamp-1">{news.title}</h4>
-                <p className="text-xs text-slate-400 mb-3">{news.date}</p>
-                <div className="flex justify-between items-center pt-4 border-t border-slate-50">
-                  <button onClick={() => handleEdit(news)} className="text-blue-500 hover:bg-blue-50 p-2 rounded-xl"><Edit3 size={18} /></button>
-                  <button onClick={() => { if(confirm("Delete this article?")) deleteDoc(doc(db, "news", news.id)) }} className="text-red-400 hover:bg-red-50 p-2 rounded-xl"><Trash2 size={18} /></button>
+              <div key={news.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all overflow-hidden group">
+                {/* News Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <img 
+                    src={news.image || 'https://via.placeholder.com/400x300?text=No+Image'} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                    alt={news.title}
+                    onError={(e) => e.currentTarget.src = 'https://via.placeholder.com/400x300?text=No+Image'}
+                  />
+                  <div className="absolute top-3 right-3 px-2 py-1 bg-black/60 text-white text-xs rounded-lg backdrop-blur-sm">
+                    {news.date}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 mb-2 line-clamp-2">{news.title}</h3>
+                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">{news.excerpt || 'No excerpt provided'}</p>
+                  
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <button 
+                      onClick={() => handleEdit(news)} 
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      <Edit3 size={16} /> Edit
+                    </button>
+                    <button 
+                      onClick={() => { if(confirm("Delete this article?")) deleteDoc(doc(db, "news", news.id)) }} 
+                      className="flex items-center gap-1 text-red-500 hover:text-red-600 text-sm font-medium"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {newsList.length === 0 && (
+            <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+              <Newspaper size={48} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">No news articles yet. Create your first article above.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

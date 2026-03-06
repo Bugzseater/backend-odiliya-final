@@ -96,7 +96,7 @@ const AdminAboutForm: React.FC = () => {
             </div>
             
             {/* Tabs */}
-            <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex bg-white/30 backdrop-blur-md p-1 rounded-xl shadow-lg border border-white/40\">
               <button
                 onClick={() => setActiveTab('edit')}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
@@ -128,7 +128,7 @@ const AdminAboutForm: React.FC = () => {
           <form onSubmit={handleUpdate} className="space-y-6">
             
             {/* Company Overview */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 overflow-hidden\">
               <div className="px-6 py-4 bg-linear-to-r from-orange-50 to-transparent border-b border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <FileText size={20} className="text-orange-600" />
@@ -154,7 +154,7 @@ const AdminAboutForm: React.FC = () => {
             </div>
 
             {/* Statistics Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 overflow-hidden">
               <div className="px-6 py-4 bg-linear-to-r from-orange-50 to-transparent border-b border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <Trophy size={20} className="text-orange-600" />
@@ -190,7 +190,7 @@ const AdminAboutForm: React.FC = () => {
             </div>
 
             {/* Contact Information */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 overflow-hidden">
               <div className="px-6 py-4 bg-linear-to-r from-orange-50 to-transparent border-b border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <Phone size={20} className="text-orange-600" />
@@ -244,7 +244,7 @@ const AdminAboutForm: React.FC = () => {
             </div>
 
             {/* Social Media Links */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white/30 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 overflow-hidden">
               <div className="px-6 py-4 bg-linear-to-r from-orange-50 to-transparent border-b border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <Globe size={20} className="text-orange-600" />
@@ -343,7 +343,7 @@ const AdminAboutForm: React.FC = () => {
             {/* Main Content Preview */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Description */}
-              <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="lg:col-span-2 bg-white/30 backdrop-blur-md rounded-2xl border border-white/40 shadow-lg overflow-hidden\">
                 <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <FileText size={18} className="text-orange-600" />
@@ -399,7 +399,7 @@ const AdminAboutForm: React.FC = () => {
               </div>
 
               {/* Contact & Social Card */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white/30 backdrop-blur-md rounded-2xl border border-white/40 shadow-lg overflow-hidden">
               <div className="px-6 py-4 bg-linear-to-br from-gray-900 to-gray-800 text-white">
                   <h3 className="font-semibold flex items-center gap-2">
                     <Phone size={18} />
@@ -492,7 +492,7 @@ const AdminAboutForm: React.FC = () => {
 const StatCard = ({ icon, label, value, color }: any) => (
   <div className={`${color} p-6 rounded-2xl border border-white/50 shadow-sm hover:shadow-md transition-all duration-200`}>
     <div className="flex items-center gap-4">
-      <div className="p-3 bg-white rounded-xl shadow-sm">
+      <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-sm\">
         {icon}
       </div>
       <div>

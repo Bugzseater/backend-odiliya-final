@@ -4,7 +4,8 @@ import {
   LayoutDashboard, Info, Phone, Newspaper,
   Landmark, Building2, Tag, LogOut, Image, 
   MessageSquare, ChevronLeft, ChevronRight,
-  Settings, HelpCircle, Bell
+  Settings, HelpCircle, Bell,
+  PersonStanding
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -36,14 +37,15 @@ const Sidebar: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Projects', path: '/projects', icon: Building2, badge: 3 },
+    { name: 'Projects', path: '/projects', icon: Building2 },
     { name: 'Land Projects', path: '/land', icon: Landmark },
-    { name: 'News', path: '/news', icon: Newspaper, badge: 2 },
+    { name: 'News', path: '/news', icon: Newspaper},
     { name: 'Gallery', path: '/gallery', icon: Image },
     { name: 'About', path: '/about', icon: Info },
-    { name: 'Contact', path: '/contact', icon: Phone, badge: 5 },
+    { name: 'Contact', path: '/contact', icon: Phone },
     { name: 'Project Inquiries', path: '/projects-inquiries', icon: MessageSquare },
     { name: 'SEO Meta', path: '/meta', icon: Tag },
+    { name: 'Member Management', path: '/client-management', icon: PersonStanding },
   ];
 
   const isActivePath = (path: string) => {
@@ -128,12 +130,7 @@ const Sidebar: React.FC = () => {
                       strokeWidth={isActive ? 2.2 : 1.8}
                       className={`transition-all ${isActive ? 'text-orange-600' : 'text-gray-500 group-hover:text-orange-600'}`}
                     />
-                    {/* Badge */}
-                    {item.badge && expanded && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[10px] rounded-full flex items-center justify-center animate-pulse">
-                        {item.badge}
-                      </span>
-                    )}
+
                   </div>
 
                   {/* Label */}

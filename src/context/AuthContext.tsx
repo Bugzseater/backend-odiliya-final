@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock users - in production, this should be in Firebase Auth
 const VALID_USERS = [
-  { email: 'admin@gmail.com', password: 'admin123', role: 'admin' as const },
+  { email: 'admin@gmail.com', password: 'admin123', role: '' as const },
   { email: 'odiliya@gmail.com', password: 'odiliya123', role: 'editor' as const }
 ];
 
@@ -35,7 +35,8 @@ const ROLE_PERMISSIONS = {
     '/projects',
     '/projects-inquiries',
     '/gallery',
-    '/meta'
+    '/meta',
+    '/client-management'
   ],
   editor: [
     '/',
@@ -45,7 +46,8 @@ const ROLE_PERMISSIONS = {
     '/land',
     '/projects',
     '/projects-inquiries',
-    '/gallery'
+    '/gallery',
+    '/client-management'
     // '/meta' is intentionally excluded
   ]
 };
