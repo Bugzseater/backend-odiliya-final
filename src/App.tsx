@@ -14,12 +14,13 @@ import ProjectsDetails from './pages/ProjectsDetails';
 import ProjectsInquiries from './pages/ProjectsInquiries';
 import GallaryManage from './pages/GallaryManage';
 import MetaDetails from './pages/MetaDetails';
+import Dashboard from './pages/Dashboard';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex bg-slate-50 min-h-screen">
+  <div className="flex min-h-screen bg-gray-50">
     <Sidebar />
-    <main className="flex-1 p-8 overflow-auto">
-      <div className="max-w-7xl mx-auto">
+    <main className="flex-1 transition-all duration-300">
+      <div className="p-6 lg:p-8">
         {children}
       </div>
     </main>
@@ -31,7 +32,7 @@ const App: React.FC = () => {
     <Router>
       <AuthProvider>
         <Routes>
-          {/* Public Routes - මුලින්ම define කරන්න */}
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           
@@ -41,7 +42,7 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <h1 className="text-2xl font-bold">Dashboard Home</h1>
+                  <Dashboard />
                 </Layout>
               </ProtectedRoute>
             }
@@ -135,7 +136,7 @@ const App: React.FC = () => {
             }
           />
           
-          {/* 404 - Not Found */}
+          {/* 404 Redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

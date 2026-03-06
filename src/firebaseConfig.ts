@@ -1,19 +1,16 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage"; // 1. Storage import කරන්න
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDS--IQFPDA2WyBvhWhxZSrZyiWIZYjGTk",
-  authDomain: "odiliya-backend-dashboard.firebaseapp.com",
-  projectId: "odiliya-backend-dashboard",
-  storageBucket: "odiliya-backend-dashboard.firebasestorage.app",
-  messagingSenderId: "961246966912",
-  appId: "1:961246966912:web:5aae24369e6c62c50de265"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// 2. Export db and storage
 export const db = getFirestore(app);
-export const storage = getStorage(app); // Storage එක export කළා
+export const storage = getStorage(app);
